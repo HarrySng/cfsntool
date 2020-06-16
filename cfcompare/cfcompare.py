@@ -33,10 +33,34 @@ def getAliasNamesPositions(tags): # First and last occurence of alias entry
 
 
 def version(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows the version number and the release date of the version.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A string of the form: Version: ## released on YYYY-MM-DDTHH:MM:SSZ
+	"""
 	root = getRoot(getResponse(v))
-	return "Version: {},  updated on {}".format(root[0].text, root[1].text)
+	return "Version: {},  released on {}".format(root[0].text, root[1].text)
 
 def standardnames(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows the CF Standard Names in this version.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of strings representing the CF Standard Names.
+	"""
 	root = getRoot(getResponse(v))
 	positions = getStandardNamePositions(getTags(root))
 	standardNames = []
@@ -45,6 +69,18 @@ def standardnames(v = "current"): # Call
 	return standardNames
 
 def descriptions(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows all descriptions in this version of the CF Standard Names.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of strings representing the descriptions for each CF Standard Name.
+	"""
 	root = getRoot(getResponse(v))
 	positions = getStandardNamePositions(getTags(root))
 	descriptions = []
@@ -53,6 +89,18 @@ def descriptions(v = "current"): # Call
 	return descriptions
 
 def uom(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows all Unit of Measures in this version of the CF Standard Names.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of strings representing the Unit of Measure for each CF Standard Name.
+	"""
 	root = getRoot(getResponse(v))
 	positions = getStandardNamePositions(getTags(root))
 	units = []
@@ -61,12 +109,26 @@ def uom(v = "current"): # Call
 	return units
 
 def aliases(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows all alias terms in this version of the CF Standard Names.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	dict object with CF Standard Name as the key and cooresponding alias(es) as values.
+	"""
 	root = getRoot(getResponse(v))
 	positions = getAliasNamesPositions(getTags(root))
+	aliasID = []
 	aliasEntries = []
 	for i in range(positions[0], positions[1]):
+		aliasID.append(root[i].attrib['id'])
 		aliasEntries.append(root[i][0].text)
-	return aliasEntries
+	return {aliasID[i]: [aliasEntries[i]] for i in range(len(aliasID))}
 
 def makeDict(v):
 	root = getRoot(getResponse(v))
@@ -82,7 +144,32 @@ def makeDict(v):
 	return  {standardNames[i]: [descriptions[i], units[i]] for i in range(len(standardNames))} 
 
 
-def compare(v = "current", ov): # Call
+def compare(ov, v = "current"): # Call
+	"""
+	SUMMARY:
+	Compares two versions of CF Standard Names
+
+	PARAMETERS:
+	ov (int): 
+		An integer representing the older version. eg: 65
+	
+	v (int, default = "current"): 
+		An integer representing the newer version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+	
+	RETURNS:
+	dict object with the following keys:
+		numNewNames: The total number of new CF Standard Names added in the new version.
+		newNames: The CF Standard Names added in the new version.
+		numUpdatedDescriptions: The number of descriptions updated for existing CF Standard Names.
+		updatedDescriptionFor: The CF Standard Names for which descriptions are updated in the new version.
+		oldDescriptions: CF Standard Name descriptions from the older version.
+		newDescriptions: CF Standard Name descriptions from the newer version.
+		numUpdatedUnits: The number of units updated for existing CF Standard Names.
+		updatedUnitsFor: The CF Standard Names for which units are updated in the new version.
+		oldUnits: CF Standard Name units from the older version.
+		newUnitsCF Standard Name units from the newer version.
+	"""
 	vDict = makeDict(v)
 	ovDict = makeDict(ov)
 
@@ -107,12 +194,14 @@ def compare(v = "current", ov): # Call
 				newUnits.append(vDict[key][1])
 	
 	updateDict = {
-		"numNewTerms": len(newNames),
-		"newTerms": newNames,
+		"numNewNames": len(newNames),
+		"newNames": newNames,
 		"numUpdatedDescriptions": len(udpatedDesc),
+		"updatedDescriptionFor": udpatedDesc,
 		"oldDescriptions": oldDesc,
 		"newDescriptions": newDesc,
 		"numUpdatedUnits": len(updatedUnits),
+		"updatedUnitsFor": updatedUnits,
 		"oldUnits": oldUnits,
 		"newUnits": newUnits
 	}
