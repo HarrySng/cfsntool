@@ -43,10 +43,10 @@ def version(v = "current"): # Call
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
-	A string of the form: Version: ## released on YYYY-MM-DDTHH:MM:SSZ
+	A string of the form: Version: ## released on YYYY-MM-DDTHH:MM:SSZ by INSTITUTE. Contact: email.
 	"""
 	root = getRoot(getResponse(v))
-	return "Version: {},  released on {}".format(root[0].text, root[1].text)
+	return "Version: {},  released on {} by {}. Contact: {}".format(root[0].text, root[1].text, root[2].text, root[3].text)
 
 def standardnames(v = "current"): # Call
 	"""
@@ -108,6 +108,46 @@ def uom(v = "current"): # Call
 		units.append(root[i][0].text)
 	return units
 
+def grib(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows all grib tag values in this version of the CF Standard Names.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of strings representing the grib tag values for each CF Standard Name.
+	"""
+	root = getRoot(getResponse(v))
+	positions = getStandardNamePositions(getTags(root))
+	grib = []
+	for i in range(positions[0], positions[1]):
+		grib.append(root[i][1].text)
+	return grib
+
+def amip(v = "current"): # Call
+	"""
+	SUMMARY:
+	Shows all amip tag values in this version of the CF Standard Names.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the CF Standard Name version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of strings representing the amip tag values for each CF Standard Name.
+	"""
+	root = getRoot(getResponse(v))
+	positions = getStandardNamePositions(getTags(root))
+	amip = []
+	for i in range(positions[0], positions[1]):
+		amip.append(root[i][1].text)
+	return amip
+
 def aliases(v = "current"): # Call
 	"""
 	SUMMARY:
@@ -130,21 +170,76 @@ def aliases(v = "current"): # Call
 		aliasEntries.append(root[i][0].text)
 	return {aliasID[i]: [aliasEntries[i]] for i in range(len(aliasID))}
 
-def makeDict(v):
-	root = getRoot(getResponse(v))
-	positions = getStandardNamePositions(getTags(root))
-	standardNames = []
-	descriptions = []
-	units = []
-	for i in range(positions[0], positions[1]):
-		standardNames.append(root[i].attrib['id'])
-		descriptions.append(root[i][3].text)
-		units.append(root[i][0].text)
+def getcf(v = "current"): # Call
+	"""
+	SUMMARY:
+	Gets all CF Standard names along with related data. Aliases not included.
+
+	PARAMETERS:
+	v (int, default = "current"): 
+		An integer representing the newer version. eg. 66
+		If left blank, it defaults to the latest (current) version.
 	
-	return  {standardNames[i]: [descriptions[i], units[i]] for i in range(len(standardNames))} 
+	RETURNS:
+	dict object:
+		CF Standard Name as the key.
+		A list of Canonical Units, GRIB, AMIP and Description as the value.
+	"""
+	cfnames = standardnames(v)
+	cfdescription = descriptions(v)
+	cfuom = uom(v)
+	cfgrib = grib(v)
+	cfamip = amip(v)
+	
+	cfdict = {cfnames[i]: [cfuom[i], cfgrib[i], cfamip[i], cfdescription[i]] for i in range(len(cfnames))} 
+
+	return cfdict
 
 
-def compare(ov, v = "current"): # Call
+def compareWrapper(v, ov, tag):
+
+	mapTag = {
+		"canonical_units": 0,
+		"units": 0,
+		"grib": 1,
+		"amip": 2,
+		"description": 3
+	}
+
+	if tag not in mapTag.keys():
+		raise Exception("The provided tag is not valid. Please read the documentation 'help(cf.compare)' for valid tags.")
+
+	index = mapTag[tag]
+
+	vDict = getcf(v)
+	ovDict = getcf(ov)
+
+	newNames = []
+	udpateFor = []
+	oldValue = []
+	newValue = []
+	for key in vDict:
+		if key not in ovDict:
+			newNames.append(key)
+		elif key in ovDict:
+			if vDict[key][index] != ovDict[key][index]:
+				udpateFor.append(key) # The key for which the tag got updated
+				oldValue.append(ovDict[key][index])
+				newValue.append(vDict[key][index])
+
+	metadata =	"{} new CF Standard Names have been added in {} version, since version #{}.\nThe {} tag was updated for {} existing terms.".format(len(newNames), v, ov, tag, len(udpateFor))
+
+	updateDict = {
+		"metadata": metadata,
+		"newCFNames": newNames,
+		"tagUpdatedFor": udpateFor,
+		"oldTagValues": oldValue,
+		"newTagValues": newValue
+	}
+
+	return updateDict
+
+def compare(ov, v = "current", tag = None): # Call
 	"""
 	SUMMARY:
 	Compares two versions of CF Standard Names
@@ -156,55 +251,112 @@ def compare(ov, v = "current"): # Call
 	v (int, default = "current"): 
 		An integer representing the newer version. eg. 66
 		If left blank, it defaults to the latest (current) version.
+
+	tag (string, default = None):
+		A string representing the tag name to be compared along with the Standard Name.
+		Either "canonical_units" ("units" is also accepted), "grib", "amip", or "description".
+		The provided tag will be compared across the two versions along with the Standard term.
+		If the provided tag is None (default), all tags will be compared.
 	
 	RETURNS:
 	dict object with the following keys:
-		numNewNames: The total number of new CF Standard Names added in the new version.
-		newNames: The CF Standard Names added in the new version.
-		numUpdatedDescriptions: The number of descriptions updated for existing CF Standard Names.
-		updatedDescriptionFor: The CF Standard Names for which descriptions are updated in the new version.
-		oldDescriptions: CF Standard Name descriptions from the older version.
-		newDescriptions: CF Standard Name descriptions from the newer version.
-		numUpdatedUnits: The number of units updated for existing CF Standard Names.
-		updatedUnitsFor: The CF Standard Names for which units are updated in the new version.
-		oldUnits: CF Standard Name units from the older version.
-		newUnitsCF Standard Name units from the newer version.
+		
 	"""
-	vDict = makeDict(v)
-	ovDict = makeDict(ov)
 
-	newNames = []
-	udpatedDesc = []
-	oldDesc = []
-	newDesc = []
-	updatedUnits = []
-	oldUnits = []
-	newUnits = []
-	for key in vDict:
-		if key not in ovDict:
-			newNames.append(key)
-		elif key in ovDict:
-			if vDict[key][0] != ovDict[key][0]:
-				udpatedDesc.append(key) # The key for which description got updated
-				oldDesc.append(ovDict[key][0])
-				newDesc.append(vDict[key][0])
-			if vDict[key][1] != ovDict[key][1]:
-				updatedUnits.append(key) # The key for which units got updated
-				oldUnits.append(ovDict[key][1])
-				newUnits.append(vDict[key][1])
+	if tag is not None:
+		comparison = compareWrapper(v, ov, tag)
+	else:
+		comparison = []
+		for tag in ["units", "grib", "amip", "description"]:
+			comparison.append(compareWrapper(v, ov, tag))
+			## NEEDS SOME WORK
+
+	return comparison
+
+def cfname(standardName, v = "current"):
+	"""
+	SUMMARY:
+	Get all details corresponding to a CF Standard Name from a specific version.
+
+	PARAMETERS:
+	standardName (string): 
+		A string representing the CF Standard Name.
 	
-	updateDict = {
-		"numNewNames": len(newNames),
-		"newNames": newNames,
-		"numUpdatedDescriptions": len(udpatedDesc),
-		"updatedDescriptionFor": udpatedDesc,
-		"oldDescriptions": oldDesc,
-		"newDescriptions": newDesc,
-		"numUpdatedUnits": len(updatedUnits),
-		"updatedUnitsFor": updatedUnits,
-		"oldUnits": oldUnits,
-		"newUnits": newUnits
+	v (int, default = "current"): 
+		An integer representing the newer version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+	
+	RETURNS:
+	dict object with the following keys:
+		entry: CF Standard Name
+		canonical_units: Value of the <canonical_units> XML tag
+		grib: Value of the <grib> XML tag
+		amip: Value of the <amip> XML tag
+		description: Value of the <description> XML tag
+	"""
+	cfnames = standardnames(v)
+	
+	if standardName not in cfnames:
+		raise Exception("The provided standard name does not exist in this version of CF Standard Names.")
+
+	index = cfnames.index(standardName)
+
+	root = getRoot(getResponse(v))
+
+	cfdict = {
+		"entry": standardName,
+		"canonical_units": root[index][0].text,
+		"grib": root[index][1].text,
+		"amip": root[index][2].text,
+		"description": root[index][3].text
 	}
 
-	return updateDict
+	return cfdict
+
+def find(keywords, v = "current"):
+	"""
+	SUMMARY:
+	Find if a standard name exists in the provided version of CF Standard Names.
+	If not an exact match, get all closely matching standard names.
+
+	PARAMETERS:
+	keywords (list of strings): 
+		A list of keywords which will be matched to a standard name.
 	
+	v (int, default = "current"): 
+		An integer representing the newer version. eg. 66
+		If left blank, it defaults to the latest (current) version.
+
+	RETURNS:
+	A list of dict objects. Each dict object has the following keys:
+		key: The keyword provided
+		exactMatch: A string of the CF Standard Name if an exact match is found. None if no exact match.
+		partialMatch: A list of strings partially matching the keyword. None if no partial match.
+	"""
+	cfnames = standardnames(v)
+
+	def searchkey(key):
+		exactMatch = None
+		partialMatch = []
+		for cfn in cfnames:
+			if key == cfn:
+				exactMatch = cfn
+			elif key in cfn:
+				partialMatch.append(cfn)
+
+		if len(partialMatch) < 1:
+			partialMatch = None
+
+		matchDict = {
+			"key": key,
+			"exactMatch": exactMatch,
+			"partialMatch": partialMatch
+		}
+
+		return matchDict
+
+	matched = []
+	for key in keywords:
+		matched.append(searchkey(key))
+
+	return matched
