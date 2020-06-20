@@ -7,6 +7,8 @@ def getResponse(v): # v is an integer (version#) or "current"
 		return requests.get(url)
 
 def getRoot(r):
+		if r.status_code != 200:
+			return None
 		return ET.fromstring(r.content)
 
 def getTags(root): # Returns all child tags (at first nested position only, which is ideal)
@@ -39,13 +41,17 @@ def version(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A string of the form: Version: ## released on YYYY-MM-DDTHH:MM:SSZ by INSTITUTE. Contact: email.
 	"""
+
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	return "Version: {},  released on {} by {}. Contact: {}".format(root[0].text, root[1].text, root[2].text, root[3].text)
 
 def standardnames(v = "current"): # Call
@@ -55,13 +61,16 @@ def standardnames(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A list of strings representing the CF Standard Names.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getStandardNamePositions(getTags(root))
 	standardNames = []
 	for i in range(positions[0], positions[1]):
@@ -75,13 +84,16 @@ def descriptions(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A list of strings representing the descriptions for each CF Standard Name.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getStandardNamePositions(getTags(root))
 	descriptions = []
 	for i in range(positions[0], positions[1]):
@@ -95,13 +107,16 @@ def uom(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A list of strings representing the Unit of Measure for each CF Standard Name.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getStandardNamePositions(getTags(root))
 	units = []
 	for i in range(positions[0], positions[1]):
@@ -115,13 +130,16 @@ def grib(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A list of strings representing the grib tag values for each CF Standard Name.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getStandardNamePositions(getTags(root))
 	grib = []
 	for i in range(positions[0], positions[1]):
@@ -135,13 +153,16 @@ def amip(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	A list of strings representing the amip tag values for each CF Standard Name.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getStandardNamePositions(getTags(root))
 	amip = []
 	for i in range(positions[0], positions[1]):
@@ -155,13 +176,16 @@ def aliases(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the CF Standard Name version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	RETURNS:
 	dict object with CF Standard Name as the key and cooresponding alias(es) as values.
 	"""
 	root = getRoot(getResponse(v))
+	if root is None:
+		raise Exception("This version was not found on the CF Standard Name Webpage. Please verify the version number again.")
+
 	positions = getAliasNamesPositions(getTags(root))
 	aliasID = []
 	aliasEntries = []
@@ -177,7 +201,7 @@ def getcf(v = "current"): # Call
 
 	PARAMETERS:
 	v (int, default = "current"): 
-		An integer representing the newer version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 	
 	RETURNS:
@@ -246,10 +270,10 @@ def compare(ov, v = "current", tag = None): # Call
 
 	PARAMETERS:
 	ov (int): 
-		An integer representing the older version. eg: 65
+		An integer/string representing the older version. eg: 65 or '65'
 	
 	v (int, default = "current"): 
-		An integer representing the newer version. eg. 66
+		An integer/string representing the newer version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 
 	tag (string, default = None):
@@ -260,8 +284,19 @@ def compare(ov, v = "current", tag = None): # Call
 	
 	RETURNS:
 	dict object with the following keys:
-		
+		metadata: A summary of changes
+		newCFNames: New CF Names added in the newer version
+		tagUpdatedFor: The existing CF Names for which the provided tag value was updated.
+		oldTagValues: Tag values in the older version.
+		newTagValues: Tag values in the newer version.
 	"""
+
+	if ov == 'current':
+		raise Exception("The older version cannot be 'current', please provide a valid older version.")
+
+	if v != 'current':
+		if int(v) <= int(ov):
+			raise Exception("The older version (ov) should be smaller than the newer version (v). Please re-enter valid version numbers.")
 
 	if tag is not None:
 		comparison = compareWrapper(v, ov, tag)
@@ -283,7 +318,7 @@ def cfname(standardName, v = "current"):
 		A string representing the CF Standard Name.
 	
 	v (int, default = "current"): 
-		An integer representing the newer version. eg. 66
+		An integer/string representing the CF Standard Name version. eg. 66 or '66'
 		If left blank, it defaults to the latest (current) version.
 	
 	RETURNS:
@@ -320,8 +355,8 @@ def find(keywords, v = "current"):
 	If not an exact match, get all closely matching standard names.
 
 	PARAMETERS:
-	keywords (list of strings): 
-		A list of keywords which will be matched to a standard name.
+	keywords (string or list of strings): 
+		A keyword or list of keywords which will be matched to a standard name.
 	
 	v (int, default = "current"): 
 		An integer representing the newer version. eg. 66
@@ -334,6 +369,9 @@ def find(keywords, v = "current"):
 		partialMatch: A list of strings partially matching the keyword. None if no partial match.
 	"""
 	cfnames = standardnames(v)
+
+	if type(keywords) != list:
+		keywords = [keywords]
 
 	def searchkey(key):
 		exactMatch = None
@@ -355,8 +393,10 @@ def find(keywords, v = "current"):
 
 		return matchDict
 
-	matched = []
-	for key in keywords:
-		matched.append(searchkey(key))
-
-	return matched
+	if len(keywords) == 1:
+		return searchkey(keywords[0])
+	else:
+		matched = []
+		for key in keywords:
+			matched.append(searchkey(key))
+		return matched
