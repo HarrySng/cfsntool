@@ -12,7 +12,7 @@ pip install cfcompare as cf
 ```python
 help(cf) # Read complete documentation of the package
 
-# Documentation surroounding individual functions can be accessed using
+# Documentation surrounding individual functions can be accessed using
 help(cf.function_name)
 ```
 
@@ -23,7 +23,7 @@ help(cf.function_name)
 cf.version() # Defaults to current version
 # 'Version: 72,  released on 2020-03-10T11:52:02Z by Centre for Environmental Data Analysis. Contact: support@ceda.ac.uk'
 
-cf,version(71) # Fetch details for an older version
+cf.version(71) # Fetch details for an older version
 # 'Version: 71,  released on 2020-02-04T12:00Z by Centre for Environmental Data Analysis. Contact: support@ceda.ac.uk'
 ```
 
