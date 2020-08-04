@@ -11,7 +11,7 @@ setuptools.setup(
     description="Tool to compare CF Standard Name versions.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="",
+    download_url="https://github.com/HarrySng/cfsntool/archive/v1.0.0.tar.gz",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
