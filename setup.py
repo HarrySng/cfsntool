@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="cfcompare", # Replace with your own username
-    version="0.0.4",
+    version="1.0.0",
     author="Harry Singh",
     author_email="hsing247@uwo.ca",
     description="Tool to compare CF Standard Name versions.",
