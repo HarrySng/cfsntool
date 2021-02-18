@@ -5,7 +5,7 @@
 
 ## Installation
 ```python
-pip install cfcompare as cf
+pip install cfcompare
 ```
 
 ## Getting help
@@ -20,6 +20,8 @@ help(cf.function_name)
 
 ### See version details.
 ```python
+import cfcompare as cf
+
 cf.version() # Defaults to current version
 # 'Version: 72,  released on 2020-03-10T11:52:02Z by Centre for Environmental Data Analysis. Contact: support@ceda.ac.uk'
 
