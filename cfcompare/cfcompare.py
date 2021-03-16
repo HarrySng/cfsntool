@@ -339,10 +339,10 @@ def cfname(standardName, v = "current"):
 
 	cfdict = {
 		"entry": standardName,
-		"canonical_units": root[index][0].text,
-		"grib": root[index][1].text,
-		"amip": root[index][2].text,
-		"description": root[index][3].text
+		"canonical_units": root[index+4][0].text,
+		"grib": root[index+4][1].text,
+		"amip": root[index+4][2].text,
+		"description": root[index+4][3].text
 	}
 
 	return cfdict
